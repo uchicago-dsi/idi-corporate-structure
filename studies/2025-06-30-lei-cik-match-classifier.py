@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import pyarrow as pa
 import pyarrow.parquet as pq
-from tqdm import tqdm
 from thefuzz import fuzz
 
 registry = pd.read_csv(
@@ -299,7 +298,7 @@ hq_state = np.full(len(gleif) * len(sec), -1, dtype=np.int8)
 hq_zip = np.full(len(gleif) * len(sec), -1, dtype=np.int8)
 is_us = np.full(len(gleif) * len(sec), -1, dtype=np.int8)
 
-for i, (grow, srow) in tqdm(
+for i, (grow, srow) in (
     enumerate(itertools.product(gleif.itertuples(), sec.itertuples())),
     total=len(gleif) * len(sec),
 ):
@@ -359,7 +358,7 @@ writer = pq.ParquetWriter(
     compression_level=4,
 )
 
-for start in tqdm(range(0, len(table), BATCH_SIZE)):
+for start in (range(0, len(table), BATCH_SIZE)):
     stop = min(len(table), start + BATCH_SIZE)
     for batch in table[start:stop].to_batches():
         writer.write_batch(batch)
