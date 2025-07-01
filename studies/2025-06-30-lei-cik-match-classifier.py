@@ -283,6 +283,9 @@ sec = pd.DataFrame(
     }
 )
 
+del registry
+del sec2023
+
 LEI = np.empty(len(gleif) * len(sec), dtype=object)
 CIK = np.empty(len(gleif) * len(sec), dtype=object)
 name = np.full(len(gleif) * len(sec), -1, dtype=np.int8)
