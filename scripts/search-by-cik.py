@@ -134,22 +134,26 @@ if __name__ == "__main__":
 
             num_api_calls += do_search(cik, filename_search, 1)
 
-        if not os.path.exists(filename_mdass):
+        if not os.path.exists(filename_mdass) and os.path.getsize(filename_search) != 0:
             with open(filename_mdass, "w"):
                 pass  # create an empty file to "own" this CIK
 
-            with open(filename_search) as file:
-                search_data = json.load(file)
-
-            permids = [
-                x.get("@id", "").split("/")[-1]
-                for x in search_data.get("result", {})
-                .get("organizations", {})
-                .get("entities", [])
-            ]
-            for permid in permids:
-                if permid != "":
-                    num_api_calls += do_mdass(cik, permid, filename_mdass, 1)
+            try:
+                with open(filename_search) as file:
+                    search_data = json.load(file)
+            except Exception:
+                # the search file was nonempty, but not full; let another process take it
+                os.unlink(filename_mdass)
+            else:
+                permids = [
+                    x.get("@id", "").split("/")[-1]
+                    for x in search_data.get("result", {})
+                    .get("organizations", {})
+                    .get("entities", [])
+                ]
+                for permid in permids:
+                    if permid != "":
+                        num_api_calls += do_mdass(cik, permid, filename_mdass, 1)
 
         actual_time = time.time() - start_time
 
