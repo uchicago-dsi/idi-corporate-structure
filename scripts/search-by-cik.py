@@ -115,7 +115,7 @@ if __name__ == "__main__":
     if LOGFILE is None:
         logging_args["stream"] = sys.stdout
     else:
-        logging_args["filename"] = LOGGING
+        logging_args["filename"] = LOGFILE
     logging.basicConfig(**logging_args)
 
     with open("data/unique-ciks.txt") as file:
