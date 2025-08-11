@@ -72,23 +72,23 @@ if __name__ == "__main__":
     def children_of(lei):
         return (
             [
-                (x, f"CONSOLIDATES {entities.loc[x].item()}")
+                (x, f"CONSOLIDATES: {entities.loc[x].item()}")
                 for x in consolidates.get(lei, [])
             ]
             + [
-                (x, f"FUND-MANAGES {entities.loc[x].item()}")
+                (x, f"FUND-MANAGES: {entities.loc[x].item()}")
                 for x in fund_manages.get(lei, [])
             ]
             + [
-                (x, f"HAS SUBFUND {entities.loc[x].item()}")
+                (x, f"HAS SUBFUND: {entities.loc[x].item()}")
                 for x in has_subfund.get(lei, [])
             ]
             + [
-                (x, f"HAS INTERNATIONAL BRANCH {entities.loc[x].item()}")
+                (x, f"HAS INTERNATIONAL BRANCH: {entities.loc[x].item()}")
                 for x in has_intbranch.get(lei, [])
             ]
             + [
-                (x, f"HAS FEEDER {entities.loc[x].item()}")
+                (x, f"HAS FEEDER: {entities.loc[x].item()}")
                 for x in has_feeder.get(lei, [])
             ]
         )
