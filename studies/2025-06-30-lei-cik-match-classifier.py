@@ -1,3 +1,4 @@
+import json
 import os
 import itertools
 from collections import Counter
@@ -11,7 +12,22 @@ import pyarrow.parquet as pq
 from thefuzz import fuzz
 
 registry = pd.read_csv(
-    "../20250630-0800-gleif-goldencopy-lei2-golden-copy.csv", low_memory=False
+    "20250630-0800-gleif-goldencopy-lei2-golden-copy.csv",
+    dtype=str,
+    usecols=[
+        "LEI",
+        "Entity.LegalName",
+        "Entity.LegalAddress.FirstAddressLine",
+        "Entity.LegalAddress.City",
+        "Entity.LegalAddress.Region",
+        "Entity.LegalAddress.Country",
+        "Entity.LegalAddress.PostalCode",
+        "Entity.HeadquartersAddress.FirstAddressLine",
+        "Entity.HeadquartersAddress.City",
+        "Entity.HeadquartersAddress.Region",
+        "Entity.HeadquartersAddress.Country",
+        "Entity.HeadquartersAddress.PostalCode",
+    ],
 )
 
 registry["LegalAddress-region"] = np.where(
@@ -29,7 +45,7 @@ us_or_canada = registry["Entity.LegalAddress.Country"].isin(["US", "CA"]) | regi
     "Entity.HeadquartersAddress.Country"
 ].isin(["US", "CA"])
 
-sec2023 = pd.read_csv("../data/sec-2023.csv", dtype={"cik": str})
+sec2023 = pd.read_csv("data/sec-2023.csv", dtype={"cik": str})
 
 address_replacement = {
     "STREET": "ST",
@@ -285,82 +301,32 @@ sec = pd.DataFrame(
 del registry
 del sec2023
 
-LEI = np.empty(len(gleif) * len(sec), dtype=object)
-CIK = np.empty(len(gleif) * len(sec), dtype=object)
-name = np.full(len(gleif) * len(sec), -1, dtype=np.int8)
-legal_address = np.full(len(gleif) * len(sec), -1, dtype=np.int8)
-legal_city = np.full(len(gleif) * len(sec), -1, dtype=np.int8)
-legal_state = np.full(len(gleif) * len(sec), -1, dtype=np.int8)
-legal_zip = np.full(len(gleif) * len(sec), -1, dtype=np.int8)
-hq_address = np.full(len(gleif) * len(sec), -1, dtype=np.int8)
-hq_city = np.full(len(gleif) * len(sec), -1, dtype=np.int8)
-hq_state = np.full(len(gleif) * len(sec), -1, dtype=np.int8)
-hq_zip = np.full(len(gleif) * len(sec), -1, dtype=np.int8)
-is_us = np.full(len(gleif) * len(sec), -1, dtype=np.int8)
+with open("/net/projects2/spun-hyper/idi-corporate-structure/comparisons.csv", "w") as file:
+    file.write("LEI,CIK,name,legal_address,legal_city,legal_state,legal_zip,hq_address,hq_city,hq_state,hq_zip,is_us\n")
 
-for i, (grow, srow) in (
-    enumerate(itertools.product(gleif.itertuples(), sec.itertuples())),
-    total=len(gleif) * len(sec),
-):
-    LEI[i] = grow.LEI
-    CIK[i] = srow.CIK
-    name[i] = fuzz.ratio(grow.name, srow.name)
-    legal_address[i] = fuzz.ratio(grow.legal_address, srow.address)
-    legal_city[i] = fuzz.ratio(grow.legal_city, srow.city)
-    legal_state[i] = fuzz.ratio(grow.legal_region, srow.state)
-    legal_zip[i] = len(os.path.commonprefix([grow.legal_zip, srow.zip]))
-    hq_address[i] = fuzz.ratio(grow.hq_address, srow.address)
-    hq_city[i] = fuzz.ratio(grow.hq_city, srow.city)
-    hq_state[i] = fuzz.ratio(grow.hq_region, srow.state)
-    hq_zip[i] = len(os.path.commonprefix([grow.hq_zip, srow.zip]))
-    yes = srow.state.startswith("US-")
-    is_us[i] = (1 if grow.legal_region.startswith("US-") and yes else 0) + (
-        2 if grow.hq_region.startswith("US-") and yes else 0
-    )
+    for i, (grow, srow) in (
+        enumerate(itertools.product(gleif.itertuples(), sec.itertuples()))
+        # total=len(gleif) * len(sec),
+    ):
+        if i % 1000 == 0:
+            print(i / (len(gleif) * len(sec)))
 
-table = pa.Table.from_arrays(
-    [
-        pa.array(LEI),
-        pa.array(CIK2),
-        pa.array(name),
-        pa.array(legal_address),
-        pa.array(legal_city),
-        pa.array(legal_state),
-        pa.array(legal_zip),
-        pa.array(hq_address),
-        pa.array(hq_city),
-        pa.array(hq_state),
-        pa.array(hq_zip),
-        pa.array(is_us),
-    ],
-    names=[
-        "LEI",
-        "CIK",
-        "name",
-        "legal_address",
-        "legal_city",
-        "legal_state",
-        "legal_zip",
-        "hq_address",
-        "hq_city",
-        "hq_state",
-        "hq_zip",
-        "is_us",
-    ],
-)
+        LEI = grow.LEI
+        CIK = srow.CIK
+        name = fuzz.ratio(grow.name, srow.name)
+        legal_address = fuzz.ratio(grow.legal_address, srow.address)
+        legal_city = fuzz.ratio(grow.legal_city, srow.city)
+        legal_state = fuzz.ratio(grow.legal_region, srow.state)
+        legal_zip = len(os.path.commonprefix([grow.legal_zip, srow.zip]))
+        hq_address = fuzz.ratio(grow.hq_address, srow.address)
+        hq_city = fuzz.ratio(grow.hq_city, srow.city)
+        hq_state = fuzz.ratio(grow.hq_region, srow.state)
+        hq_zip = len(os.path.commonprefix([grow.hq_zip, srow.zip]))
+        yes = srow.state.startswith("US-")
+        is_us = (1 if grow.legal_region.startswith("US-") and yes else 0) + (
+            2 if grow.hq_region.startswith("US-") and yes else 0
+        )
 
-BATCH_SIZE = 10000000
+        file.write(f"{LEI},{CIK},{name},{legal_address},{legal_city},{legal_state},{legal_zip},{hq_address},{hq_city},{hq_state},{hq_zip},{is_us}\n")
 
-writer = pq.ParquetWriter(
-    "comparisons.parquet",
-    table.schema,
-    compression="gzip",
-    compression_level=4,
-)
-
-for start in (range(0, len(table), BATCH_SIZE)):
-    stop = min(len(table), start + BATCH_SIZE)
-    for batch in table[start:stop].to_batches():
-        writer.write_batch(batch)
-
-writer.close()
+print("DONE")

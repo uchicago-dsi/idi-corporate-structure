@@ -138,6 +138,8 @@ if __name__ == "__main__":
             with open(filename_mdass, "w"):
                 pass  # create an empty file to "own" this CIK
 
+            logging.info(f"staring MDASS for {cik}")
+
             try:
                 with open(filename_search) as file:
                     search_data = json.load(file)
@@ -151,6 +153,7 @@ if __name__ == "__main__":
                     .get("organizations", {})
                     .get("entities", [])
                 ]
+                logging.info(f"number of permids for {cik} is {len(permids)}")
                 for permid in permids:
                     if permid != "":
                         num_api_calls += do_mdass(cik, permid, filename_mdass, 1)
