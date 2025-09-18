@@ -6,17 +6,29 @@ import requests
 import pandas as pd
 from tqdm import tqdm
 
+RATE_LIMIT = 0.2  # seconds per request
+
 df = pd.read_csv("form-directories.csv", dtype=str)
 selected = df.groupby(["cik", "form"]).last().sort_values("date", ascending=False).reset_index()
 
-for index, row in tqdm(selected.iterrows(), total=len(selected)):
+for index, row in tqdm(selected.iterrows(), total=len(selected), miniters=1):
     filename = f"form-directories/{row['cik']}.json"
+    if os.path.exists(filename):
+        continue
 
+    start_time = time.time()
     response = requests.get(row["directory"], headers={"User-Agent": "Jim Pivarski jpivarski@uchicago.edu"})
-    test_json = json.loads(response.content)
+    try:
+        test_json = json.loads(response.content)
+    except Exception as err:
+        print(response.text)
+        raise err
     assert "directory" in test_json
 
     with open(filename, "w") as file:
         json.dump(test_json, file, separators=(",", ":"))
 
-    time.sleep(0.1)
+    stop_time = time.time()
+    wait_time = RATE_LIMIT - (stop_time - start_time)
+    if wait_time > 0:
+        time.sleep(wait_time)
