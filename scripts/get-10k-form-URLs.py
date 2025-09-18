@@ -39,4 +39,4 @@ with zipfile.ZipFile(os.path.expanduser("~/Box/dsi-core/11th-hour/idi-corporate-
 
                     rows.append({"cik": cik, "date": filingDate, "form": form, "accessionNumber": accessionNumber, "directory": directory, "primary": primary})
 
-pd.DataFrame(rows).sort_values(["cik", "date", "form"], index=False).to_csv("form-directories.csv")
+pd.DataFrame(rows).sort_values(["cik", "date", "form"]).to_csv("form-directories.csv", index=False)
