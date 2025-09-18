@@ -10,6 +10,7 @@ def tqdm(iterable, **kwargs):
     yield from iterable
 
 RATE_LIMIT = 0.2  # seconds per request
+EX = re.compile(r"\BEX")
 TWENTYONE = re.compile("[^0-9]21")
 
 for directory in tqdm(os.listdir("form-directories")), miniters=1:
@@ -27,7 +28,7 @@ for directory in tqdm(os.listdir("form-directories")), miniters=1:
     urls = {}
     for item in items:
         name = item["name"].upper()
-        if ("EX" in name and (name.startswith("21") or TWENTYONE.search(name))) or "SUB" in name:
+        if (EX.search(name) and (name.startswith("21") or TWENTYONE.search(name))) or "SUB" in name:
             urls[item["name"]] = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession}/{item['name']}"
 
     os.mkdir(outdir)
