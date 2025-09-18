@@ -4,6 +4,7 @@ import re
 import zipfile
 
 import pandas as pd
+from tqdm import tqdm
 
 is_10k = re.compile("10-?K")
 is_date = re.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}")
@@ -11,7 +12,8 @@ is_date = re.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}")
 rows = []
 
 with zipfile.ZipFile(os.path.expanduser("~/Box/dsi-core/11th-hour/idi-corporate-structure/submissions.zip")) as zf:
-    for filename in zf.namelist():
+    namelist = list(zf.namelist())
+    for filename in tqdm(namelist):
         if filename.startswith("CIK") and filename.endswith(".json"):
             cik = filename[3:-5]
 
@@ -37,4 +39,4 @@ with zipfile.ZipFile(os.path.expanduser("~/Box/dsi-core/11th-hour/idi-corporate-
 
                     rows.append({"cik": cik, "date": filingDate, "form": form, "accessionNumber": accessionNumber, "directory": directory, "primary": primary})
 
-pd.DataFrame(rows).sort_values(["cik", "date", "form"]).to_csv("form-directories.csv")
+pd.DataFrame(rows).sort_values(["cik", "date", "form"], index=False).to_csv("form-directories.csv")
