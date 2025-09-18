@@ -13,7 +13,7 @@ RATE_LIMIT = 0.2  # seconds per request
 EX = re.compile(r"\BEX")
 TWENTYONE = re.compile("[^0-9]21")
 
-for directory in tqdm(os.listdir("form-directories")), miniters=1:
+for directory in tqdm(os.listdir("form-directories"), miniters=1):
     outdir = f"form-exhibit21/{directory.split('.')[0]}"
     if os.path.exists(outdir):
         continue
