@@ -4,7 +4,10 @@ import time
 
 import requests
 import pandas as pd
-from tqdm import tqdm
+# from tqdm import tqdm
+
+def tqdm(iterable, **kwargs):
+    yield from iterable
 
 RATE_LIMIT = 0.2  # seconds per request
 
@@ -12,7 +15,7 @@ df = pd.read_csv("form-directories.csv", dtype=str)
 selected = df.groupby(["cik", "form"]).last().sort_values("date", ascending=False).reset_index()
 
 for index, row in tqdm(selected.iterrows(), total=len(selected), miniters=1):
-    filename = f"form-directories/{row['cik']}.json"
+    filename = f"form-directories/{row['date']}_{row['cik']}_{row['accessionNumber']}.json"
     if os.path.exists(filename):
         continue
 
