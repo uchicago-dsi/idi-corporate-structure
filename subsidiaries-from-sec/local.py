@@ -145,7 +145,7 @@ def modify_print(identifier: str) -> Callable:
     """
 
     def modified_print(*args, **kwargs):
-        args = (time.strftime("%H:%M"), identifier + ":") + args
+        args = (time.strftime("%H:%M:%S"), identifier + ":") + args
         kwargs["flush"] = True
         return builtins.print(*args, **kwargs)
 
@@ -167,7 +167,9 @@ def run_dispatcher(
         message_count (multiprocessing.Value): Shared message count.
     """
 
+    # replace the 'print' function in the dispatcher
     dispatcher.__globals__["print"] = modified_print = modify_print("DISPATCHER")
+    # replace the 'boto3' module in the dispatcher to mock interfaces
     dispatcher.__globals__["boto3"] = MockBoto3(
         modified_print, message_queue, message_count
     )
@@ -203,11 +205,14 @@ def run_worker(
         message_count (multiprocessing.Value): Shared message count.
     """
 
+    # replace the 'print' function in the worker to distinguish each worker's output
     worker.__globals__["print"] = modified_print = modify_print(f"WORKER-{identifier}")
+    # replace the 'boto3' module in the dispatcher to mock interfaces
     worker.__globals__["boto3"] = MockBoto3(
         modified_print, message_queue, message_count
     )
 
+    # replace the 'AWS_BATCH_JOB_ARRAY_INDEX' environment variable for this worker
     os.environ["AWS_BATCH_JOB_ARRAY_INDEX"] = identifier
 
     modified_print("BEGIN")
@@ -219,6 +224,8 @@ def run_worker(
         for line in traceback.format_exc().split("\n"):
             modified_print(line)
         modified_print("END WITH ERROR 💀")
+
+    modified_print("END")
 
 
 def run(
